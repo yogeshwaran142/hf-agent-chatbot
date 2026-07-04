@@ -67,7 +67,8 @@ demo = gr.ChatInterface(
         "What is 245 * 89 + 12?",
         "Explore the CSV at AI_Job_Market_Trends_2026.csv",
     ],
+    theme=gr.themes.Soft(),
 )
 
 if __name__ == "__main__":
-    demo.launch(theme=gr.themes.Soft())
+    demo.launch()
