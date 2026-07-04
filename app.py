@@ -24,11 +24,18 @@ if not GROQ_API_KEY:
 
 model = InferenceClientModel(model_id=MODEL_ID, provider="groq", token=GROQ_API_KEY)
 
+_last_observation = {"value": None}
+
+def _capture_step(memory_step, agent=None):
+    obs = getattr(memory_step, "observations", None)
+    if obs:
+        _last_observation["value"] = str(obs)
+
 agent = ToolCallingAgent(
     tools=[calculator, web_search, wikipedia_lookup, explore_csv, query_csv, aggregate_csv],
     model=model,
-    max_steps=4,
-    instructions="When you have the final answer, call the final_answer tool directly with just the answer value. Do not nest it inside another tool call.",
+    max_steps=5,
+    step_callbacks=[_capture_step],
 )
 
 import re
@@ -41,17 +48,33 @@ def _extract_answer_from_error(error_text: str):
         return match.group(1)
     return None
 
+def _get_last_tool_observation(agent):
+    """If the agent errors out after a tool already ran successfully,
+    grab that tool's result directly from memory instead of failing."""
+    try:
+        for step in reversed(agent.memory.steps):
+            obs = getattr(step, "observations", None)
+            if obs:
+                return str(obs)
+    except Exception:
+        pass
+    return None
+
 def respond(message, history):
     for attempt in range(2):
+        _last_observation["value"] = None
         try:
             return str(agent.run(message))
         except Exception as e:
             error_str = str(e)
-            print(f"DEBUG - Error caught: {error_str}")  # Idha temporary-a add pannunga
+            print(f"DEBUG - Error caught: {error_str}")
             recovered = _extract_answer_from_error(error_str)
             if recovered:
-                print(f"DEBUG - Recovered answer: {recovered}")  # Idhum
+                print(f"DEBUG - Recovered from error text: {recovered}")
                 return recovered
+            if _last_observation["value"]:
+                print(f"DEBUG - Recovered from step callback: {_last_observation['value']}")
+                return _last_observation["value"]
             if attempt == 0:
                 time.sleep(2)
                 continue
