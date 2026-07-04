@@ -62,6 +62,7 @@ def respond(message, history):
 
 demo = gr.ChatInterface(
     fn=respond,
+    type="messages",
     title="🚀 THE ZOARA AI 🤖",
     description=f"Powered by **{MODEL_ID}** via Groq. Math, web search, Wikipedia, and CSV analysis.",
     examples=[
