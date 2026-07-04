@@ -7,8 +7,8 @@ sdk: gradio
 sdk_version: 4.44.0
 app_file: app.py
 pinned: false
+python_version: 3.10
 ---
-
 # AI Agent Chatbot (Hugging Face + smolagents + Gradio)
 
 A chatbot that isn't just a Q&A bot — it's an **agent**. It can decide on its
