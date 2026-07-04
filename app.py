@@ -82,7 +82,7 @@ def respond(message, history):
 
 demo = gr.ChatInterface(
     fn=respond,
-    title="🤖 AI Agent Chatbot",
+    title="🚀 THE ZOARA AI 🤖",
     description=f"Powered by **{MODEL_ID}** via Groq. Math, web search, Wikipedia, and CSV analysis.",
     examples=[
         "What is 245 * 89 + 12?",
