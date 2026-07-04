@@ -1,4 +1,4 @@
-gradio==5.9.1
+gradio==5.23.1
 smolagents>=1.6.0
 python-dotenv>=1.0.0
 ddgs>=9.0.0

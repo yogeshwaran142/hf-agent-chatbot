@@ -27,7 +27,7 @@ model = InferenceClientModel(model_id=MODEL_ID, provider="groq", token=GROQ_API_
 agent = ToolCallingAgent(
     tools=[calculator, web_search, wikipedia_lookup, explore_csv, query_csv, aggregate_csv],
     model=model,
-    max_steps=3,
+    max_steps=4,
 )
 
 
@@ -46,8 +46,8 @@ def _extract_answer_from_error(error_text: str):
     return None
 
 
-def respond(message, history):
-    for attempt in range(2):
+def respond(message: str, history: list) -> str:  
+  for attempt in range(2):
         try:
             return str(agent.run(message))
         except Exception as e:
