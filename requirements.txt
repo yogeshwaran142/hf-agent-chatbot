@@ -1,0 +1,5 @@
+gradio>=4.44.0
+smolagents>=1.6.0
+python-dotenv>=1.0.0
+ddgs>=9.0.0
+wikipedia-api>=0.6.0
