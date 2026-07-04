@@ -24,6 +24,14 @@ def _load_csv(file_path: str) -> pd.DataFrame:
     return _csv_cache[file_path]
 
 
+def _truncate(text: str, max_chars: int = 3000) -> str:
+    """Internal helper: cap tool output length so a single call can't
+    blow up the token budget sent to the LLM on the next step."""
+    if len(text) <= max_chars:
+        return text
+    return text[:max_chars] + f"\n... [truncated, {len(text) - max_chars} more characters omitted]"
+
+
 @tool
 def calculator(expression: str) -> str:
     """
@@ -60,7 +68,7 @@ def explore_csv(file_path: str) -> str:
     """
     try:
         df = _load_csv(file_path)
-        return (
+        return _truncate(
             f"Shape: {df.shape[0]} rows, {df.shape[1]} columns\n"
             f"Columns: {list(df.columns)}\n"
             f"Data types:\n{df.dtypes.to_string()}\n\n"
@@ -88,7 +96,7 @@ def query_csv(file_path: str, query: str) -> str:
         result = df.query(query)
         if result.empty:
             return "No rows matched this query."
-        return result.head(20).to_string()
+        return _truncate(result.head(20).to_string())
     except Exception as e:
         return f"Error running query: {e}"
 
@@ -99,21 +107,36 @@ def aggregate_csv(file_path: str, group_by: str, agg_column: str, agg_func: str 
     Groups a CSV by one column and aggregates another (mean, sum, count, min, max).
     Call explore_csv first to see the exact column names available.
 
+    IMPORTANT: group_by must be a CATEGORICAL column with a small number of
+    distinct values (e.g. "department", "country", "experience_level") — NOT a
+    unique ID column (e.g. "job_id", "employee_id"), since that produces one
+    near-useless row per record instead of a real aggregation.
+
     Args:
         file_path: Path to the CSV file.
-        group_by: Column name to group by, e.g. "department"
+        group_by: A categorical column name to group by, e.g. "department"
         agg_column: Column name to aggregate, e.g. "salary"
         agg_func: One of "mean", "sum", "count", "min", "max"
 
     Returns:
-        Aggregated results as text, or an error message.
+        Top 20 aggregated groups (sorted descending) as text, or an error message.
     """
     try:
         if agg_func not in ("mean", "sum", "count", "min", "max"):
             return "Error: agg_func must be one of mean, sum, count, min, max"
         df = _load_csv(file_path)
+
+        n_unique = df[group_by].nunique()
+        if n_unique > 50:
+            return (
+                f"Error: '{group_by}' has {n_unique} unique values, which is too many "
+                f"to group by meaningfully — it's likely a unique ID column. Pick a "
+                f"categorical column instead (check explore_csv output for options)."
+            )
+
         result = df.groupby(group_by)[agg_column].agg(agg_func)
-        return result.to_string()
+        result = result.sort_values(ascending=False).head(20)
+        return _truncate(result.to_string())
     except Exception as e:
         return f"Error: {e}"
 
