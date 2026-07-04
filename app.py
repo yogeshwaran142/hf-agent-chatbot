@@ -28,31 +28,29 @@ agent = ToolCallingAgent(
     tools=[calculator, web_search, wikipedia_lookup, explore_csv, query_csv, aggregate_csv],
     model=model,
     max_steps=4,
+    instructions="When you have the final answer, call the final_answer tool directly with just the answer value. Do not nest it inside another tool call.",
 )
-
 
 import re
 import time
 
 
 def _extract_answer_from_error(error_text: str):
-    """Some models occasionally wrap the final answer in a malformed
-    nested tool call instead of calling final_answer correctly. If that
-    happens, pull the actual answer straight out of the error text
-    instead of failing."""
     match = re.search(r'"answer"\s*:\s*"([^"]*)"', error_text)
     if match:
         return match.group(1)
     return None
 
-
-def respond(message: str, history: list) -> str:  
-  for attempt in range(2):
+def respond(message, history):
+    for attempt in range(2):
         try:
             return str(agent.run(message))
         except Exception as e:
-            recovered = _extract_answer_from_error(str(e))
+            error_str = str(e)
+            print(f"DEBUG - Error caught: {error_str}")  # Idha temporary-a add pannunga
+            recovered = _extract_answer_from_error(error_str)
             if recovered:
+                print(f"DEBUG - Recovered answer: {recovered}")  # Idhum
                 return recovered
             if attempt == 0:
                 time.sleep(2)
