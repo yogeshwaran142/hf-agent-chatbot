@@ -81,8 +81,8 @@ def explore_csv(file_path: str) -> str:
 @tool
 def query_csv(file_path: str, query: str) -> str:
     """
-    Filters a CSV using a pandas query expression and returns matching rows.
-    Call explore_csv first to see the exact column names available.
+    Filters a CSV using a pandas query expression, returns matching rows.
+    Call explore_csv first to see column names.
 
     Args:
         file_path: Path to the CSV file (same one used in explore_csv).
@@ -105,21 +105,17 @@ def query_csv(file_path: str, query: str) -> str:
 def aggregate_csv(file_path: str, group_by: str, agg_column: str, agg_func: str = "mean") -> str:
     """
     Groups a CSV by one column and aggregates another (mean, sum, count, min, max).
-    Call explore_csv first to see the exact column names available.
-
-    IMPORTANT: group_by must be a CATEGORICAL column with a small number of
-    distinct values (e.g. "department", "country", "experience_level") — NOT a
-    unique ID column (e.g. "job_id", "employee_id"), since that produces one
-    near-useless row per record instead of a real aggregation.
+    Call explore_csv first to see column names. group_by must be a categorical
+    column with few distinct values (e.g. "department"), NOT a unique ID column.
 
     Args:
         file_path: Path to the CSV file.
-        group_by: A categorical column name to group by, e.g. "department"
-        agg_column: Column name to aggregate, e.g. "salary"
+        group_by: Categorical column to group by, e.g. "department"
+        agg_column: Column to aggregate, e.g. "salary"
         agg_func: One of "mean", "sum", "count", "min", "max"
 
     Returns:
-        Top 20 aggregated groups (sorted descending) as text, or an error message.
+        Top 20 aggregated groups as text, or an error message.
     """
     try:
         if agg_func not in ("mean", "sum", "count", "min", "max"):
