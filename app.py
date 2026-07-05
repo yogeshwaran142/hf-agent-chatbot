@@ -1,3 +1,4 @@
+
 """
 AI Agent Chatbot — Groq + smolagents + Gradio
 Run: python app.py
@@ -72,3 +73,6 @@ demo = gr.ChatInterface(
     cache_examples=False,
     theme=gr.themes.Soft(),
 )
+
+if __name__ == "__main__":
+    demo.launch(server_name="0.0.0.0", server_port=7860)
