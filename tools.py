@@ -137,6 +137,54 @@ def aggregate_csv(file_path: str, group_by: str, agg_column: str, agg_func: str 
         return f"Error: {e}"
 
 
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import os as _os
+
+
+@tool
+def chart_csv(file_path: str, group_by: str, agg_column: str, agg_func: str = "mean") -> str:
+    """
+    Groups a CSV by one column, aggregates another, and saves a bar chart
+    image to disk. Call explore_csv first to see column names.
+
+    Args:
+        file_path: Path to the CSV file.
+        group_by: Categorical column to group by, e.g. "department"
+        agg_column: Column to aggregate, e.g. "salary"
+        agg_func: One of "mean", "sum", "count", "min", "max"
+
+    Returns:
+        The file path of the saved chart image, or an error message.
+    """
+    try:
+        if agg_func not in ("mean", "sum", "count", "min", "max"):
+            return "Error: agg_func must be one of mean, sum, count, min, max"
+        df = _load_csv(file_path)
+
+        n_unique = df[group_by].nunique()
+        if n_unique > 50:
+            return f"Error: '{group_by}' has {n_unique} unique values — pick a categorical column."
+
+        result = df.groupby(group_by)[agg_column].agg(agg_func).sort_values(ascending=False).head(15)
+
+        plt.figure(figsize=(9, 5))
+        result.plot(kind="bar", color="#4C72B0")
+        plt.title(f"{agg_func.title()} of {agg_column} by {group_by}")
+        plt.ylabel(agg_column)
+        plt.xlabel(group_by)
+        plt.tight_layout()
+
+        _os.makedirs("charts", exist_ok=True)
+        out_path = f"charts/{group_by}_{agg_column}_{agg_func}.png"
+        plt.savefig(out_path)
+        plt.close()
+        return out_path
+    except Exception as e:
+        return f"Error: {e}"
+
+
 # --- Want to add your own tool? Copy this template ---
 #
 # @tool

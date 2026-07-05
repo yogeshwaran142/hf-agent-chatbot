@@ -9,7 +9,7 @@ import gradio as gr
 from smolagents import ToolCallingAgent, OpenAIServerModel
 import pandas as pd
 
-from tools import calculator, web_search, wikipedia_lookup, explore_csv, query_csv, aggregate_csv
+from tools import calculator, web_search, wikipedia_lookup, explore_csv, query_csv, aggregate_csv, chart_csv
 
 load_dotenv()
 
@@ -30,9 +30,9 @@ model = OpenAIServerModel(
 )
 
 agent = ToolCallingAgent(
-    tools=[calculator, web_search, wikipedia_lookup, explore_csv, query_csv, aggregate_csv],
+    tools=[calculator, web_search, wikipedia_lookup, explore_csv, query_csv, aggregate_csv, chart_csv],
     model=model,
-    max_steps=3,
+    max_steps=2,
 )
 
 
@@ -51,16 +51,36 @@ def _extract_answer_from_error(error_text: str):
     return None
 
 
+def _build_task_with_context(message, history):
+    """Feed the last few turns of chat history into the task so the
+    agent has conversational context, without relying on cross-session
+    shared state (safe for multiple concurrent users)."""
+    if not history:
+        return message
+    recent = history[-6:]  # last 3 user/assistant exchanges
+    lines = []
+    for turn in recent:
+        role = turn.get("role", "user")
+        content = turn.get("content", "")
+        lines.append(f"{role}: {content}")
+    context = "\n".join(lines)
+    return f"Previous conversation:\n{context}\n\nNew question: {message}"
+
+
 def respond(message, history):
-    for attempt in range(2):
+    task = _build_task_with_context(message, history)
+    for attempt in range(3):
         try:
-            return str(agent.run(message))
+            result = str(agent.run(task)).strip()
+            if result.endswith(".png") and os.path.exists(result):
+                return gr.Image(result)
+            return result
         except Exception as e:
             recovered = _extract_answer_from_error(str(e))
             if recovered:
                 return recovered
-            if attempt == 0:
-                time.sleep(2)
+            if attempt < 2:
+                time.sleep(2 ** attempt)  # 1s, then 2s
                 continue
             return f"⚠️ That attempt failed: {e}\n\nPlease try asking again."
 
