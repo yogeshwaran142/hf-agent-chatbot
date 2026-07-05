@@ -1,4 +1,3 @@
-
 """
 AI Agent Chatbot — Groq + smolagents + Gradio
 Run: python app.py
@@ -7,7 +6,7 @@ Run: python app.py
 import os
 from dotenv import load_dotenv
 import gradio as gr
-from smolagents import ToolCallingAgent, InferenceClientModel
+from smolagents import ToolCallingAgent, OpenAIServerModel
 import pandas as pd
 
 from tools import calculator, web_search, wikipedia_lookup, explore_csv, query_csv, aggregate_csv
@@ -24,7 +23,11 @@ if not GROQ_API_KEY:
         "2) Add it to .env as GROQ_API_KEY=gsk_xxxx"
     )
 
-model = InferenceClientModel(model_id=MODEL_ID, provider="groq", token=GROQ_API_KEY)
+model = OpenAIServerModel(
+    model_id=MODEL_ID,
+    api_base="https://api.groq.com/openai/v1",
+    api_key=GROQ_API_KEY,
+)
 
 agent = ToolCallingAgent(
     tools=[calculator, web_search, wikipedia_lookup, explore_csv, query_csv, aggregate_csv],
