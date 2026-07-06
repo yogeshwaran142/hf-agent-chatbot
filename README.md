@@ -1,64 +1,61 @@
----
-title: AI Agent Chatbot
-emoji: 🤖
-colorFrom: blue
-colorTo: purple
-sdk: gradio
-sdk_version: 5.23.1
-app_file: app.py
-pinned: false
-python_version: "3.10"
+# 🚀 AI Agent Chatbot — Groq + smolagents + Gradio
+
+A tool-calling AI agent built from scratch that reasons step-by-step, calls the right tool for the job, and answers in natural language — powered by **Groq's `llama-3.1-8b-instant`** for fast inference.
+
+**🔗 Live Demo:** [huggingface.co/spaces/Tomyokesh33/ai-agent-chatbot](https://huggingface.co/spaces/Tomyokesh33/ai-agent-chatbot)
+
 ---
 
-# 🤖 AI Agent Chatbot
+## ✨ Features
 
-A tool-calling AI agent built with **smolagents**, powered by a Groq-hosted LLM (`openai/gpt-oss-120b`), wrapped in a **Gradio** chat interface. The agent reasons step-by-step over each user query and autonomously decides which tool to call — math, web search, Wikipedia lookup, or CSV data analysis — before returning a final answer.
+- **Agentic reasoning** — uses [smolagents](https://github.com/huggingface/smolagents)' `ToolCallingAgent` to decide which tool to call, execute it, and synthesize a final answer
+- **Conversation memory** — remembers recent chat context, so follow-up questions work naturally
+- **Data analysis tools** — explore, query, and aggregate any CSV file directly through chat
+- **Chart generation** — ask for a visualization and get a real bar chart rendered inline
+- **Resilient by design** — automatic retries with exponential backoff, and recovery from malformed model outputs
+- **Fast** — direct connection to Groq's OpenAI-compatible API (no extra routing hops)
 
-**🔗 Live Demo:** https://huggingface.co/spaces/Tomyokesh33/ai-agent-chatbot
+## 🛠️ Tools Available to the Agent
 
-## Features
-
-- **Tool-calling agent** (`ToolCallingAgent`) that reasons step-by-step and picks the right tool for each query
-- **6 integrated tools:**
-  - `calculator` — evaluates math expressions
-  - `web_search` — live web search for current information
-  - `wikipedia_lookup` — fetches Wikipedia summaries
-  - `explore_csv` — inspects shape, columns, dtypes, and sample rows of a CSV
-  - `query_csv` — filters/queries rows from a CSV
-  - `aggregate_csv` — group-by aggregations (mean, sum, count, etc.) on a CSV
-- **Fault-tolerant execution** — automatic retry logic plus a step-callback-based fallback that recovers the last successful tool result if the LLM produces a malformed final-answer call, so the user still gets a correct answer instead of an error
-- **Fast inference** via Groq's LPU-hosted `openai/gpt-oss-120b` model
-- **Production deployment** on HuggingFace Spaces with environment-variable-based secrets management (no API keys ever committed to source control)
-
-## Tech Stack
-
-| Layer | Technology |
+| Tool | What it does |
 |---|---|
-| Agent framework | [smolagents](https://github.com/huggingface/smolagents) (`ToolCallingAgent`) |
-| LLM | `openai/gpt-oss-120b` via [Groq](https://groq.com) Inference API |
-| UI | [Gradio](https://gradio.app) `ChatInterface` |
-| Deployment | [HuggingFace Spaces](https://huggingface.co/spaces) |
-| Language | Python 3.10 |
+| `calculator` | Safely evaluates math expressions |
+| `web_search` | DuckDuckGo web search |
+| `wikipedia_lookup` | Wikipedia article search |
+| `explore_csv` | Inspects a CSV's shape, columns, dtypes, and sample rows |
+| `query_csv` | Filters CSV rows using a pandas query expression |
+| `aggregate_csv` | Group-by + aggregate (mean/sum/count/min/max) on a CSV column |
+| `chart_csv` | Generates and returns a bar chart image from grouped/aggregated CSV data |
 
-## Architecture
+The bundled dataset is **AI Job Market Trends 2026** — ask things like:
+
+- *"Explore the CSV at AI_Job_Market_Trends_2026.csv"*
+- *"What's the average salary by experience level?"*
+- *"Create a chart of average salary by experience_level"*
+
+## 🏗️ Architecture
 
 ```
-User query
-   │
-   ▼
-ToolCallingAgent (reasoning loop, max 5 steps)
-   │
-   ├─▶ selects a tool (calculator / web_search / wikipedia_lookup / explore_csv / query_csv / aggregate_csv)
-   ├─▶ executes the tool, observes the result
-   └─▶ synthesizes a final_answer
-   │
-   ▼
-Gradio ChatInterface → response returned to user
+User message (Gradio ChatInterface)
+        │
+        ▼
+  respond() ── builds task with recent chat context
+        │
+        ▼
+  ToolCallingAgent (smolagents)
+        │
+        ├── reasons about which tool to call
+        ├── executes tool (calculator / CSV tools / search / chart)
+        └── synthesizes final answer
+        │
+        ▼
+  OpenAIServerModel → Groq API (llama-3.1-8b-instant)
+        │
+        ▼
+  Response rendered in chat (text or image)
 ```
 
-If the LLM fails to call `final_answer` correctly on the first attempt, the app retries once, then falls back to the last successful tool observation captured via a step callback — so a transient LLM formatting error never surfaces as a broken response.
-
-## Setup Locally
+## ⚙️ Setup
 
 ```bash
 git clone https://github.com/yogeshwaran142/hf-agent-chatbot.git
@@ -66,36 +63,32 @@ cd hf-agent-chatbot
 pip install -r requirements.txt
 ```
 
-Get a free Groq API key: https://console.groq.com/keys
+Create a `.env` file with your free [Groq API key](https://console.groq.com/keys):
 
-Create a `.env` file in the project root:
 ```
-GROQ_API_KEY=gsk_your_key_here
+GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxx
 ```
 
-Run the app:
+Run locally:
+
 ```bash
 python app.py
 ```
 
-## Example Queries
+## 📦 Tech Stack
 
-- `What is 245 * 89 + 12?`
-- `Explore the CSV at AI_Job_Market_Trends_2026.csv`
-- `What's the weather forecast for Melbourne today?`
+- **Agent framework:** smolagents (`ToolCallingAgent`)
+- **LLM:** Groq — `llama-3.1-8b-instant` via `OpenAIServerModel`
+- **UI:** Gradio `ChatInterface`
+- **Data:** pandas
+- **Visualization:** matplotlib
+- **Deployment:** Hugging Face Spaces (Docker)
 
-## Project Structure
+## 🙋 About
 
-```
-hf-agent-chatbot/
-├── app.py                          # Gradio UI, agent orchestration, error recovery
-├── tools.py                        # Custom tool definitions (calculator, web_search, CSV tools, etc.)
-├── requirements.txt                 # Python dependencies
-├── .env.example                    # Template for required environment variables
-└── AI_Job_Market_Trends_2026.csv   # Sample dataset for CSV tool demos
-```
+Built by **Yogeshwaran J** — B.Tech AI & Data Science graduate, exploring agentic AI and LLM tooling on top of core data analytics skills (Python, SQL, Power BI, Excel).
 
-## Author
-
-**Yogeshwaran J**
-[GitHub](https://github.com/yogeshwaran142) · [LinkedIn](https://linkedin.com/in/yogeshwaran-j15811)
+- 📧 yokesh15811@gmail.com
+- 💼 [LinkedIn](https://linkedin.com/in/yogeshwaran-j15811)
+- 🧑‍💻 [GitHub](https://github.com/yogeshwaran142)
+- 🤗 [HuggingFace](https://huggingface.co/Tomyokesh33)
