@@ -1,3 +1,13 @@
+---
+title: AI Agent Chatbot
+emoji: 🚀
+colorFrom: blue
+colorTo: purple
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # 🚀 AI Agent Chatbot — Groq + smolagents + Gradio
 
 A tool-calling AI agent built from scratch that reasons step-by-step, calls the right tool for the job, and answers in natural language — powered by **Groq's `llama-3.1-8b-instant`** for fast inference.
